@@ -1,0 +1,18 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  <h1>Login</h1>
+
+  <form action="{% url 'login' %}" method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      {{ form.as_p }}
+    </div>
+
+    <span style="text-align: center;"><input type="submit" class="btn btn-secondary" value="Submit" /></span>
+    <span style="text-align: center;"><a class="btn btn-primary" href="{% url 'oauth-login' %}">Login Using Battle.net</a></span>
+  </form>
+  <div class="mb-1">
+    <a href="{% url 'password-reset' %}">Forgot Password?</a>
+  </div>
+{% endblock content %}

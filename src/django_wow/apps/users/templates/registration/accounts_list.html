@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  <table class="table table-dark table-striped align-middle">
+    <tr>
+      <th>Account Number</th>
+      <th>Name</th>
+      <th>Character Count</th>
+    </tr>
+    {% for account in page_obj %}
+    <tr>
+      <td><a href="{% url 'account-edit' account.pk %}">{{ account.account_number }}</a></td>
+      <td><a href="{% url 'account-edit' account.pk %}">{{ account.name }}</a></td>
+      <td>{{ account.character_set.count }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Account Pagination">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.number != 1 %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1">First</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+              <a class="page-link">First</a>
+          </li>
+        {% endif %}
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link">Previous</a>
+          </li>
+        {% endif %}
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link">Next</a>
+          </li>
+        {% endif %}
+        {% if page_obj.number != page_obj.paginator.num_pages %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages}}">Last</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+              <a class="page-link">Last</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endblock content %}

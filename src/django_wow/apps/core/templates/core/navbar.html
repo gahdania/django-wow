@@ -1,0 +1,46 @@
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #49331d;">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'home' %}">{{ guild_name }}</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavDropDown">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarEventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Events</a>
+          <ul class="dropdown-menu" aria-labelledby="navbarEventsDropdown">
+            <li><a class="dropdown-item" href="#">Download as Text</a></li>
+            <li><a class="dropdown-item" href="#">Download as CSV</a></li>
+            <li><a class="dropdown-item" href="#">Download as PDF</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarAccountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Account</a>
+          <ul class="dropdown-menu" aria-labelledby="navbarAccountDropdown">
+            {% if not user.is_authenticated %}
+              <li><a class="dropdown-item" href="{% url 'login' %}">Login</a></li>
+              <li><a class="dropdown-item" href="{% url 'oauth-login' %}">Battle.net Login</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'register-user' %}">Register</a></li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'user-profile' %}">Profile</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'character-list' %}">Characters</a></li>
+              <li><a class="dropdown-item" href="{% url 'character-add' %}">Add Character</a></li>
+              <li><a class="dropdown-item" href="{% url 'characters-import' %}">Import Characters</a></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+              {% if user.is_superuser %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
+              {% endif %}
+            {% endif %}
+          </ul>
+        </li>
+      </ul>
+      <form class="d-flex">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+</nav>

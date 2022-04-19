@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    namespace: development
+    name: postgresql-secret
+type: Opaque
+data:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postfix-deploy
+  namespace: development
+  labels:
+    app: postfixql-deploy
+    restartPolicy: Always
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postfixql-deploy
+  template:
+    metadata:
+      labels:
+        app: postfixql-deploy
+    spec:
+      containers:
+        - name: postfixql-deploy
+          image: wow_postoffice
+          imagePullPolicy: Never
+          ports:
+          - containerPort: 143
+          - containerPort: 993
+          - containerPort: 25
+          - containerPort: 587
+          env:
+          - name: POSTFIX_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postfixql-secret
+                key: postfix-root-password
+          - name: MAIL_DB_HOST
+            valueFrom:
+                secretKeyRef:
+                    name: postgresql-secret
+                    key: mail-db-user
+          - name: MAIL_DB_USERNAME
+            valueFrom:
+                secretKeyRef:
+                    name:
+          - name: MAIL_DB_NAME
+            valueFrom:
+                secretKeyRef:
+                    name: postgresql-secret
+                    key: mail-db-user
+          - name: MAIL_DB_USERNAME
+            valueFrom:
+                secretKeyRef:
+                    name:
+          - name: MAIL_DB_NAME
+            valueFrom:
+                secretKeyRef:
+                    name: postgresql-secret
+                    key: mail-db-user
+          - name: MAIL_DB_USERNAME
+            valueFrom:
+                secretKeyRef:
+                    name:
+          - name: MAIL_DB_NAME
+            valueFrom:
+                secretKeyRef:
+                    name: postgresql-secret
+                    key: mail-db-user
+          - name: MAIL_DB_USERNAME
+            valueFrom:
+                secretKeyRef:
+                    name:
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postfixql-dynamic-service
+  namespace: development
+spec:
+  selector:
+    app: postfixql-deploy
+  ports:
+    - protocol: TCP
+      port: 143
+      targetPort: 143
+    - protocol: TCP
+      port: 993
+      targetPort: 993
+    - protocol: TCP
+      port: 25
+      targetPort: 25
+    - protocol: TCP
+      port: 587
+      targetPort: 587

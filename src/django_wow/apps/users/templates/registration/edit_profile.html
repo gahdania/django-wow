@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  {% if form.errors %}
+    {% for error in u_form.errors %}
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <h1>Update Profile</h1>
+
+  <form action="{% url 'user-profile' %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" class="btn btn-secondary" value="Submit" />
+  </form>
+{% endblock content %}

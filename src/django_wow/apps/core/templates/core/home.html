@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+  {% if user.is_authenticated %}
+    <h1>User: {{ user }}</h1><br/>
+  {% endif %}
+  It is {{ month }} of {{ year }}
+
+{% endblock %}

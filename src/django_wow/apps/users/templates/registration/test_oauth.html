@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  <h1>OAuth Test</h1>
+
+  <table>
+    <tr>
+      <thead>
+        Parameter
+      </thead>
+      <thead>
+        Value
+      </thead>
+    </tr>
+    <tr>
+      <td>
+        State
+      </td>
+      <td>
+        {{ state }}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Code
+      </td>
+      <td>
+        {{ code }}
+      </td>
+    </tr>
+  </table>
+{% endblock content %}

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website-dynamic-deploy
+  namespace: development
+  labels:
+    app: website-dynamic-deploy
+    restartPolicy: Never
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: website-dynamic-deploy
+  template:
+    metadata:
+      labels:
+        app: website-dynamic-deploy
+    spec:
+      containers:
+        - name: website-dynamic-deploy
+          image: wow_dynamic:latest
+          imagePullPolicy: Never
+          ports:
+          - containerPort: 8000
+          env:
+          - name: DATABASE_URL
+            valueFrom:
+                configMapKeyRef:
+                    name: website-configmap
+                    key: database_url
+          - name: CELERY_BROKER_URL
+            valueFrom:
+                configMapKeyRef:
+                    name: website-configmap
+                    key: broker_url
+          - name: CELERY_RESULT_BACKEND
+            valueFrom:
+                configMapKeyRef:
+                    name: website-configmap
+                    key: result_url
+          - name: CACHE_BACKEND
+            valueFrom:
+                configMapKeyRef:
+                    name: website-configmap
+                    key: result_url
+          - name: DEBUG
+            value: "True"
+---
+apiVersion: v1
+kind: Service
+metadata:
+    namespace: development
+    name: website-dynamic-deploy-service
+spec:
+    selector:
+        app: website-dynamic-deploy
+    ports:
+        - protocol: TCP
+          port: 8000
+          targetPort: 8000

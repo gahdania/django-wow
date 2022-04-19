@@ -1,0 +1,89 @@
+{% extends 'core/base.html' %}
+{% load localize %}
+
+{% block content %}
+  {{ sortName }}
+  <table class="table table-dark table-striped align-middle table-hover" style="text-align: center;">
+    <tr>
+      <th>Avatar</th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortName' sortName %}">Name</a></th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortRealm' sortRealm %}">Realm</a></th>
+      <th>Region</th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortLevel' sortLevel %}">Level</a></th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortClass' sortClass %}">Class</a></th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortSpec' sortSpec %}">Spec</a></th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortRace' sortRace %}">Race</a></th>
+      <th><a href="{% url 'character-list' %}?{% sortfield 'sortGender' sortGender %}">Gender</a></th>
+    </tr>
+    {% load static %}
+    {% for character in page_obj %}
+      <tr class="clickable text-center" onclick="window.location='{% url 'character-detail' character.pk %}'">
+        <td><img src="{{ character.avatar }}" alt="Avatar of {{ character.name }}"/></td>
+        <td style="text-align: center;">{{ character.name }}</td>
+        <td>{% localize character.realm.realmname_set user.preferred_locale %}</td>
+        <td>{{ character.realm.region.tag|upper }}</td>
+        <td>{{ character.level }}</td>
+        <td style="text-align: center;">
+          {% if character.cls.icon %}<img src="{{ character.cls.icon.url }}" />{% endif %}<br />
+          {% localize character.cls.classname_set user.preferred_locale %}
+        </td>
+        <td style="text-align: center;">
+          {% if character.current_spec.icon %}<img src="{{ character.current_spec.icon.url }}" />{% endif %}<br />
+          {% localize character.current_spec.specname_set user.preferred_locale %}
+          </td>
+        <td>{% localize character.race.racename_set user.preferred_locale character.gender %}</td>
+        <td>{% localize character.gender.gendername_set user.preferred_locale %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">No Characters Found</td></tr>
+    {% endfor %}
+    <tr>
+      <td colspan="2">
+        <a class="btn btn-dark" href="{% url 'characters-import' %}" role="button">{% if page_obj %}Reimport{% else %}Import{% endif %} Characters</a>
+      </td>
+    </tr>
+  </table>
+  {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Character Pagination">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.number != 1 %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1">First</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+              <a class="page-link">First</a>
+          </li>
+        {% endif %}
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link">Previous</a>
+          </li>
+        {% endif %}
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <a class="page-link">Next</a>
+          </li>
+        {% endif %}
+        {% if page_obj.number != page_obj.paginator.num_pages %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages}}">Last</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+              <a class="page-link">Last</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endblock content %}

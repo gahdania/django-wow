@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: website-static-deploy
+    namespace: development
+    labels:
+        app: website-static-deploy
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: website-static-deploy
+    template:
+        metadata:
+            labels:
+                app: website-static-deploy
+        spec:
+            containers:
+                - name: website-static-deploy
+                  image: wow_static
+                  imagePullPolicy: Never
+                  ports:
+                  - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: development
+  name: website-static-deploy-service
+spec:
+  selector:
+    app: website-static-deploy
+  ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+

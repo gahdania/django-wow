@@ -1,0 +1,16 @@
+dj-database-url==0.5.0
+django-filter>=21.1
+requests==2.27.1
+pytz
+tzdata
+requests
+Django==4.0.2
+psycopg2-binary==2.9.3
+python-decouple==3.4
+celery==5.2.0
+authlib==1.0.1
+redis==4.2.2
+rabbitmq==0.2.0
+Pillow
+--extra-index-url https://test.pypi.org/simple/
+battlenet-client>=3.0.0a3

@@ -1,0 +1,5 @@
+user = <MAIL_DB_USER>
+password = <MAIL_DB_PASS>
+hosts = <MAIL_DB_HOST>
+user = <MAIL_DB_NAME>
+query = Select maildir from mailbox,alias_domain where alias_domain.alias_domain = '%d' and mailbox.username = '%u' || '@' || alias_domain.target_domain and mailbox.active = true and alias_domain.active

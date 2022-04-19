@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% load localize %}
+
+
+{% block content %}
+  {% if form.errors %}
+    {% for error in form.errors %}
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <table class="table table-dark table-striped">
+    <tr style="vertical-align: top; text-align: center;">
+      <th>
+        <h1 style="text-align: center">{{ character.name }}</h1>
+        <img src="{{ character.cls.icon.url }}"/><img src="{{ character.current_spec.icon.url }}"/>
+        <hr/>
+      </th>
+      <th><img src="{{ character.main }}" width="75%" height="75%" alt="{{ character.name }}"/></th>
+      </th>
+    </tr>
+    <tr>
+      <th>Race</th>
+      <td>{% localize character.race.racename_set user.preferred_locale character.gender %}</td>
+    </tr>
+    <tr>
+      <th>Class</th>
+      <td>{% localize character.cls.classname_set user.preferred_locale character.gender %}</td>
+    </tr>
+    <tr>
+      <th>Current Spec</th>
+      <td>{% localize character.current_spec.specname_set user.preferred_locale character.gender %}</td>
+    </tr>
+    <tr>
+      <th>Level</th>
+      <td>{{ character.level }}</td>
+    </tr>
+    <tr>
+      <th>Realm</th>
+      <td>{%  localize character.realm.realmname_set user.preferred_locale %}</td>
+    </tr>
+    <tr>
+      <th>Region</th>
+      <td>{{ character.realm.region.name.title }}</td>
+    </tr>
+    <tr>
+      <th>Gender</th>
+      <td>{% localize character.gender.gendername_set user.preferred_locale %}</td>
+    </tr>
+    <tr>
+      <th>Last Logout</th>
+      <td>{{ character.last_updated|date:"DATETIME_FORMAT" }}</td>
+    </tr>
+  </table>
+
+{% endblock content %}

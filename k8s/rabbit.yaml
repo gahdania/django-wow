@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-deploy
+  namespace: development
+  labels:
+    app: rabbitmq-deploy
+    restartPolicy: Never
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-deploy
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-deploy
+    spec:
+      containers:
+        - name: rabbitmq-deploy
+          image: rabbitmq
+          ports:
+          - containerPort: 5672
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    namespace: development
+    name: rabbitmq-deploy-service
+spec:
+    selector:
+        app: rabbitmq-deploy
+    ports:
+        - protocol: TCP
+          port: 5672
+          targetPort: 5672

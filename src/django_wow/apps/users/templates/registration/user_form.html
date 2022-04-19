@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  {% if form.errors %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      There was an error with the form...
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endif %}
+  <h1>User Profile</h1>
+
+  <form action="{% url 'user-profile' %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" class="btn btn-secondary" value="Submit" />
+  </form>
+  {% if not user.bnet_id %}
+    <a href="{% url 'oauth-login' %}?link=1">Link to Battle.net</a>
+  {% else %}
+    <a href="{% url 'oauth-login' %}">Log into Battle.net</a>
+  {% endif %}
+{% endblock content %}
