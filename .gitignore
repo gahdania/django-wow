@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.env
+/venv
+*.sqlite3
+/.idea
+*.komodoproject
+**/.buildinfo
+**/objects.inv
+/build
+/docs/build/doctrees
+/public/
+battlenet_client.egg-info
+.coverage
+/.tox
+**/clients.py
