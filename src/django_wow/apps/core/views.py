@@ -24,26 +24,34 @@ class CharacterListView(LoginRequiredMixin, ListView):
     model = models.Character
     paginate_by = 10
 
+    operations = {
+        'sortName': {'field': 'name', 'display': 'Name'},
+        'sortRealm': {'field': 'realm__slug', 'display': 'Realm'},
+        'sortLevel': {'field': 'level', 'display': 'Level'},
+        'sortClass': {'field': 'cls__slug', 'display': 'Class'},
+        'sortSpec': {'field': 'current_spec__slug', 'display': 'Spec'},
+        'sortRace': {'field': 'race__slug', 'display': 'Race'},
+        'sortGender': {'field': 'gender__slug', 'display': 'Gender'},
+        'sortLastUpdated': {'field': 'last_updated', 'display': 'Last Update'}
+    }
+
     def get_ordering(self):
         ordering = []
 
         def set_order_list(name, value):
+
             if value == 'asc':
                 ordering.append(name)
             if value == 'desc':
                 ordering.append(f"-{name}")
 
-        set_order_list('name', self.request.GET.get('sortName'))
-        set_order_list('realm__slug', self.request.GET.get('sortRealm'))
-        set_order_list('level', self.request.GET.get('sortLevel'))
-        set_order_list('cls__slug', self.request.GET.get('sortClass'))
-        set_order_list('spec__slug', self.request.GET.get('sortSpec'))
-        set_order_list('race__slug', self.request.GET.get('sortRace'))
-        set_order_list('gender__slug', self.request.GET.get('sortGender'))
+        for key, direction in self.request.GET.items():
+            set_order_list(self.operations[key]['field'], direction)
 
         if not ordering:
-            return 'realm__slug', 'name'
+            return ['-last_updated']
 
+        print(ordering)
         return ordering
 
     def get_queryset(self):
@@ -51,18 +59,15 @@ class CharacterListView(LoginRequiredMixin, ListView):
             *self.get_ordering())
 
     def get_context_data(self, *, object_list=None, **kwargs):
-
+        sort_filters = {}
         context = super().get_context_data(object_list=object_list, **kwargs)
-        name = self.request.GET.get('sortName') if self.request.GET.get('sortName') else 'none'
-        realm = self.request.GET.get('sortRealm') if self.request.GET.get('sortRealm') else 'none'
-        level = self.request.GET.get('sortLevel') if self.request.GET.get('sortLevel') else 'none'
-        cls = self.request.GET.get('sortClass') if self.request.GET.get('sortClass') else 'none'
-        spec = self.request.GET.get('sortSpec') if self.request.GET.get('sortSpec') else 'none'
-        race = self.request.GET.get('sortRace') if self.request.GET.get('sortRace') else 'none'
-        gender = self.request.GET.get('sortGender') if self.request.GET.get('sortGender') else 'none'
-        context.update({'sortName': name, 'sortRealm': realm, 'sortLevel': level, 'sortClass': cls,
-                        'sortSpec': spec, 'sortRace': race, 'sortGender': gender})
+        for key, value in self.operations.items():
+            sort_filters.update({key: value['display']})
 
+        context['sort_filters'] = sort_filters
+
+        if self.request.GET:
+            context['params'] = self.request.GET.urlencode()
         return context
 
 
@@ -112,6 +117,7 @@ class CharacterImportView(LoginRequiredMixin, RedirectView):
                     sleep(1)
                     continue
                 if error.response.status_code == 404:
+                    print('404')
                     user_data = None
                     break
             else:
@@ -119,7 +125,7 @@ class CharacterImportView(LoginRequiredMixin, RedirectView):
                 break
 
         if user_data:
-            return_val = process_characters.apply_async(args=(user_data['wow_accounts'],))
+            return_val = process_characters.apply_async(args=(self.request.user.pk, user_data['wow_accounts']))
             if return_val:
                 messages.success(self.request, 'Import request added to queue')
             else:
@@ -127,7 +133,7 @@ class CharacterImportView(LoginRequiredMixin, RedirectView):
 
             return reverse_lazy('character-list')
         else:
-            messages.warning(self.request, 'Something happened.  You need to relogin with Blizzard')
+            messages.warning(self.request, 'Something happened.  You need to login with Blizzard')
             return self.login_url
 
 

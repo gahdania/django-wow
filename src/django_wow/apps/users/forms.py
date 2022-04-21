@@ -43,8 +43,10 @@ class UserChangeForm(forms.ModelForm):
     bnet_id = forms.CharField(label='Battle.net ID', widget=forms.TextInput(attrs={'class': 'form-control'}),
                               required=False)
     email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    region = forms.ModelChoiceField(label='Region', widget=forms.Select(attrs={'class': 'form-select'}),
+                                    queryset=models.Region.objects.filter(is_active=True))
     preferred_locale = forms.ModelChoiceField(label='Preferred Locale',
-                                              widget=forms.Select(attrs={'class': 'form-control'}),
+                                              widget=forms.Select(attrs={'class': 'form-select'}),
                                               queryset=models.Locale.objects.all())
 
     class Meta:

@@ -20,18 +20,17 @@ credential_client = OAuth2Session(settings.CLIENT_ID, settings.CLIENT_SECRET)
 credential_client.fetch_token(f"{auth_host(settings.REGION)}/oauth/token", grant_type='client_credentials')
 
 
-def get_media(char_data: dict, params) -> dict:
+def get_media(char_data: dict) -> dict:
 
     images = {}
     media_data = {}
 
     gender = 1 if char_data['gender']['type'] == 'FEMALE' else 0
-
     try:
         retries = 0
         while retries < 5:
             try:
-                response = credential_client.get(char_data['media']['href'], params=params)
+                response = credential_client.get(char_data['media']['href'])
                 response.raise_for_status()
             except HTTPError as error:
                 if error.response.status_code == 429:
@@ -47,15 +46,17 @@ def get_media(char_data: dict, params) -> dict:
         if 'assets' in media_data:
             for asset in media_data['assets']:
 
-                url_string = f"{asset['value']}?alt=/shadow/avatar/{char_data['race']['id']}-{gender}.jpg"
+                url_string = f"{asset['value']}"
                 if asset['key'].endswith('raw'):
                     images['raw'] = url_string
+                elif asset['key'] == 'avatar':
+                    images[asset['key']] = f"{url_string}?alt=/shadow/avatar/{char_data['race']['id']}-{gender}.jpg"
                 else:
                     images[asset['key']] = url_string
         else:
             images['avatar'] = f"{media_data['avatar_url']}?alt=/shadow/avatar/{char_data['race']['id']}-{gender}.jpg"
-            images['inset'] = f"{media_data['bust_url']}?alt=/shadow/avatar/{char_data['race']['id']}-{gender}.jpg"
-            images['main'] = f"{media_data['render_url']}?alt=/shadow/avatar/{char_data['race']['id']}-{gender}.jpg"
+            images['inset'] = f"{media_data['bust_url']}"
+            images['main'] = f"{media_data['render_url']}"
             images['raw'] = ''
     except KeyError as error:
         print(f"{error}: {char_data['name']} - {char_data['realm']['slug']}")
@@ -64,34 +65,32 @@ def get_media(char_data: dict, params) -> dict:
 
 
 @app.task
-def process_characters(wow_accounts):
+def process_characters(user_id, wow_accounts):
     completed = 0
 
     for account_idx in wow_accounts:
         for char_idx in account_idx['characters']:
-            if process_character(account_idx['id'], char_idx['realm']['slug'], char_idx['name']):
+            if process_character(user_id, account_idx['id'], char_idx['realm']['id'], char_idx['name']):
                 completed += 1
 
     return f"Characters Updated/Added: {completed}"
 
 
 @app.task
-def process_character(account, realm_slug, character):
+def process_character(user_id, account, realm_id, character):
 
     char_data = {}
-    account = Account.objects.get(account_number=account)
-    realm = models.Realm.objects.get(region=account.user.region, slug__iexact=realm_slug)
-    url, params = profile.profile(account.user.region.tag, realm_slug, character, status=True,
-                                  locale=account.user.preferred_locale.__str__())
-    print(f"Processing: {character} - {realm_slug.title()}")
+
+    db_account, created = Account.objects.get_or_create(account_number=account, user__pk=user_id)
+    db_realm = models.Realm.objects.get(region_id=db_account.user.region.pk, realm_id=realm_id)
     try:
-        db_char = models.Character.objects.get(account=account, realm__slug__iexact=realm_slug,
-                                               name__iexact=character)
+        db_char = models.Character.objects.get(account=db_account, realm_id=realm_id, name__iexact=character)
     except models.Character.DoesNotExist:
         # character des not exist in the database
 
-        url, params = profile.profile(account.user.region.tag, realm_slug, character,
-                                      locale=account.user.preferred_locale.__str__())
+        url, params = profile.profile(db_account.user.region.tag, db_realm.slug, character,
+                                      locale=db_account.user.preferred_locale.__str__())
+
         for _ in range(5):
             try:
                 response = credential_client.get(url, params=params)
@@ -105,7 +104,8 @@ def process_character(account, realm_slug, character):
                 break
     else:
         status = None
-
+        url, params = profile.profile(db_account.user.region.tag, db_realm.slug, character, status=True,
+                                      locale=db_account.user.preferred_locale.__str__())
         for _ in range(5):
             try:
                 response = credential_client.get(url, params=params)
@@ -120,6 +120,7 @@ def process_character(account, realm_slug, character):
                     break
             else:
                 status = response.json()
+                break
 
         if 'is_valid' in status and not status['is_valid']:
             db_char.delete()
@@ -127,13 +128,14 @@ def process_character(account, realm_slug, character):
         if character.character_id != status['id']:
             db_char.delete()
 
-        url, params = profile.profile(account.user.region.tag, realm_slug, character,
-                                      locale=account.user.preferred_locale.__str__())
+        url, params = profile.profile(db_account.user.region.tag, db_realm.slug, character,
+                                      locale=db_account.user.preferred_locale.__str__())
         for _ in range(5):
             try:
                 response = credential_client.get(url, params=params)
                 response.raise_for_status()
             except HTTPError as error:
+                print(error.response.status_code)
                 if error.response.status_code == 429:
                     sleep(1)
                     continue
@@ -142,7 +144,7 @@ def process_character(account, realm_slug, character):
                 break
     finally:
         if char_data:
-            images = get_media(char_data, params)
+            images = get_media(char_data)
 
             gender = models.Gender.objects.get(slug=char_data['gender']['type'])
             race = models.Race.objects.get(race_id=char_data['race']['id'])
@@ -156,12 +158,12 @@ def process_character(account, realm_slug, character):
                     spec = None
 
             try:
-                print(f"Creating: {char_data['name']} {char_data['realm']['slug']}")
+                print(f"Creating: {char_data['name']} {char_data['realm']['slug']} {datetime.fromtimestamp(char_data['last_login_timestamp'] / 1000, pytz.UTC)}")
                 db_char, created = models.Character.objects.update_or_create(
-                    account=account,
+                    account=db_account,
                     character_id=char_data['id'],
                     name=char_data['name'],
-                    realm=realm,
+                    realm_id=realm_id,
                     race=race,
                     gender=gender,
                     level=char_data['level'],
@@ -465,7 +467,8 @@ def connected_realm_update():
 
 
 @app.task
-def realm_type_update(tests):
+def realm_type_update(*tests):
+    print(tests)
     for realm_type, realm_name in tests:
         db_realm_type, _ = models.RealmType.objects.update_or_create(
             slug=realm_type
@@ -496,3 +499,12 @@ def realm_type_update(tests):
                 name=value
             )
 
+
+@app.task
+def character_update():
+    completed = 0
+    for character in models.Character.objects.all():
+        if process_character(character.account.account_number, character.realm.slug, character.name):
+            completed += 1
+
+    return completed

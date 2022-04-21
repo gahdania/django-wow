@@ -7,11 +7,19 @@
     <div class="collapse navbar-collapse" id="navbarNavDropDown">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarEventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Events</a>
+          <a class="nav-link dropdown-toggle" href="#" id="navbarGuild" role="button" data-bs-toggle="dropdown" aria-expanded="false">Guild</a>
           <ul class="dropdown-menu" aria-labelledby="navbarEventsDropdown">
             <li><a class="dropdown-item" href="#">Download as Text</a></li>
             <li><a class="dropdown-item" href="#">Download as CSV</a></li>
             <li><a class="dropdown-item" href="#">Download as PDF</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarCharacter" role="button" data-bs-toggle="dropdown" aria-expanded="false">Characters</a>
+          <ul class="dropdown-menu" aria-labelledby="navbarEventsDropdown">
+              <li><a class="dropdown-item" href="{% url 'character-list' %}">Characters</a></li>
+              <li><a class="dropdown-item" href="{% url 'character-add' %}">Add Character</a></li>
+              <li><a class="dropdown-item" href="{% url 'characters-import' %}">Import Characters</a></li>
           </ul>
         </li>
         <li class="nav-item dropdown">
@@ -25,9 +33,6 @@
             {% else %}
               <li><a class="dropdown-item" href="{% url 'user-profile' %}">Profile</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'character-list' %}">Characters</a></li>
-              <li><a class="dropdown-item" href="{% url 'character-add' %}">Add Character</a></li>
-              <li><a class="dropdown-item" href="{% url 'characters-import' %}">Import Characters</a></li>
               <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
               {% if user.is_superuser %}
                 <li><hr class="dropdown-divider"></li>
