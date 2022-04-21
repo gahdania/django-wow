@@ -1,6 +1,6 @@
 -r tests.txt
 
-django-debug-toolbar==3.2l.4
+django-debug-toolbar==3.2.4
 ipython==7.25.0
 daphne==3.0.2
 

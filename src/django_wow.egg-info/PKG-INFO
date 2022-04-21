@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: django-wow
+Version: 2.1.0a1
+Summary: Django Based WoW Guild Website
+Home-page: https://
+Author: David Couples
+Author-email: gahdania@gahd.io
+License: GPL v3+
+Platform: unix
+Platform: linux
+Platform: osx
+Platform: cygwin
+Platform: win32
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.6
+Provides-Extra: testing
+License-File: LICENSE
+
+UNKNOWN
+
