@@ -12,7 +12,7 @@ from requests.exceptions import HTTPError
 from apps.users.views import oauth
 from . import models
 from .forms import CharacterUpdateForm, CharacterAddForm
-from .tasks import process_character, process_characters
+from .tasks import process_character, import_characters
 
 
 def home(request, year=datetime.now().year, month=datetime.now().month):
@@ -51,7 +51,6 @@ class CharacterListView(LoginRequiredMixin, ListView):
         if not ordering:
             return ['-last_updated']
 
-        print(ordering)
         return ordering
 
     def get_queryset(self):
@@ -68,6 +67,7 @@ class CharacterListView(LoginRequiredMixin, ListView):
 
         if self.request.GET:
             context['params'] = self.request.GET.urlencode()
+
         return context
 
 
@@ -105,12 +105,13 @@ class CharacterImportView(LoginRequiredMixin, RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
 
-        url, params = profile.account_profile_summary(self.request.user.region.tag,
-                                                      locale=self.request.user.preferred_locale.__str__())
+        db_user = self.request.user.pk
+
+        url, params = profile.account_profile_summary(db_user.region.tag, locale=db_user.preferred_locale.__str__())
         user_data = {}
         for _ in range(5):
             try:
-                response = oauth.battlenet.get(url, params=params, token=self.request.user.token)
+                response = oauth.battlenet.get(url, params=params, token=db_user.token)
                 response.raise_for_status()
             except HTTPError as error:
                 if error.response.status_code == 429:
@@ -125,7 +126,7 @@ class CharacterImportView(LoginRequiredMixin, RedirectView):
                 break
 
         if user_data:
-            return_val = process_characters.apply_async(args=(self.request.user.pk, user_data['wow_accounts']))
+            return_val = import_characters.apply_async(args=(self.request.user.pk, user_data['wow_accounts']))
             if return_val:
                 messages.success(self.request, 'Import request added to queue')
             else:

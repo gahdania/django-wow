@@ -21,16 +21,14 @@
     {% for character in page_obj %}
         <tr class="clickable text-center" onclick="window.location='{% url 'character-detail' character.pk %}'">
             <td><img src="{{ character.avatar }}" alt="Avatar of {{ character.name }}"/></td>
-            <td style="text-align: center;">{{ character.name }}</td>
+            <td style="text-align: center;">{{ character.name }}{% if character.main_character %}<br/>< Main >{% endif %}</td>
             <td>{% localize character.realm.realmname_set user.preferred_locale %}</td>
             <td>{{ character.level }}</td>
             <td style="text-align: center;">
-                {% if character.cls.icon %}<img src="{{ character.cls.icon.url }}" />{% endif %}<br />
-                {% localize character.cls.classname_set user.preferred_locale %}
+                <img src="{{ character.cls.icon.url }}" alt="<br/>{% localize character.cls.classname_set user.preferred_locale %}" />
             </td>
             <td style="text-align: center;">
-                {% if character.current_spec.icon %}<img src="{{ character.current_spec.icon.url }}" />{% endif %}<br />
-                {% localize character.current_spec.specname_set user.preferred_locale %}
+                <img src="{{ character.current_spec.icon.url }}" alt="<br/>{% localize character.current_spec.specname_set user.preferred_locale %}" />
             </td>
             <td>{% localize character.race.racename_set user.preferred_locale character.gender %}</td>
             <td>{% localize character.gender.gendername_set user.preferred_locale %}</td>

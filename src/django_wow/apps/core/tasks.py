@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from os.path import basename
@@ -65,7 +65,7 @@ def get_media(char_data: dict) -> dict:
 
 
 @app.task
-def process_characters(user_id, wow_accounts):
+def import_characters(user_id, wow_accounts):
     completed = 0
 
     for account_idx in wow_accounts:
@@ -77,20 +77,17 @@ def process_characters(user_id, wow_accounts):
 
 
 @app.task
-def process_character(user_id, account, realm_id, character):
+def process_character(user_id, account, realm_slug, character):
 
     char_data = {}
 
     db_account, created = Account.objects.get_or_create(account_number=account, user__pk=user_id)
-    db_realm = models.Realm.objects.get(region_id=db_account.user.region.pk, realm_id=realm_id)
+    db_realm = models.Realm.objects.get(region_id=db_account.user.region.pk, slug__iexact=realm_slug)
     try:
-        db_char = models.Character.objects.get(account=db_account, realm_id=realm_id, name__iexact=character)
+        db_char = models.Character.objects.get(account=db_account, realm__slug__iexact=realm_slug, name__iexact=character)
     except models.Character.DoesNotExist:
-        # character des not exist in the database
-
         url, params = profile.profile(db_account.user.region.tag, db_realm.slug, character,
                                       locale=db_account.user.preferred_locale.__str__())
-
         for _ in range(5):
             try:
                 response = credential_client.get(url, params=params)
@@ -122,23 +119,26 @@ def process_character(user_id, account, realm_id, character):
                 status = response.json()
                 break
 
-        if 'is_valid' in status and not status['is_valid']:
-            db_char.delete()
-
-        if character.character_id != status['id']:
+        if ('is_valid' in status and not status['is_valid']) or db_char.character_id != status['id']:
+            print(f"Deleting: : {char_data['name']} {char_data['realm']['slug']} {datetime.fromtimestamp(char_data['last_login_timestamp'] / 1000, pytz.UTC)}")
             db_char.delete()
 
         url, params = profile.profile(db_account.user.region.tag, db_realm.slug, character,
                                       locale=db_account.user.preferred_locale.__str__())
+
         for _ in range(5):
             try:
                 response = credential_client.get(url, params=params)
                 response.raise_for_status()
             except HTTPError as error:
-                print(error.response.status_code)
                 if error.response.status_code == 429:
                     sleep(1)
                     continue
+                if error.response.status_code == 404:
+                    return False
+            except ConnectionResetError:
+                sleep(1)
+                continue
             else:
                 char_data = response.json()
                 break
@@ -146,30 +146,26 @@ def process_character(user_id, account, realm_id, character):
         if char_data:
             images = get_media(char_data)
 
-            gender = models.Gender.objects.get(slug=char_data['gender']['type'])
-            race = models.Race.objects.get(race_id=char_data['race']['id'])
-            spec = None
-            db_char = None
+            db_gender = models.Gender.objects.get(slug=char_data['gender']['type'])
 
             try:
-                spec = models.Spec.objects.get(spec_id=char_data['active_spec']['id'])
-            except KeyError as error:
-                if error == 'active_spec':
-                    spec = None
+                spec_id = char_data['active_spec']['id']
+            except KeyError:
+                spec_id = None
 
+            last_updated = datetime.fromtimestamp(char_data['last_login_timestamp'] / 1000, pytz.UTC)
             try:
-                print(f"Creating: {char_data['name']} {char_data['realm']['slug']} {datetime.fromtimestamp(char_data['last_login_timestamp'] / 1000, pytz.UTC)}")
-                db_char, created = models.Character.objects.update_or_create(
+                print(f"Processing: {char_data['name']} {char_data['realm']['slug'].title()} {last_updated}")
+                db_char, _ = models.Character.objects.update_or_create(
                     account=db_account,
                     character_id=char_data['id'],
                     name=char_data['name'],
-                    realm_id=realm_id,
-                    race=race,
-                    gender=gender,
+                    realm=db_realm,
+                    race_id=char_data['race']['id'],
+                    gender=db_gender,
                     level=char_data['level'],
-                    cls=models.PlayableClass.objects.get(class_id=char_data['character_class']['id']),
-                    last_updated=datetime.fromtimestamp(char_data['last_login_timestamp'] / 1000, pytz.UTC),
-                    current_spec=spec,
+                    cls_id=char_data['character_class']['id'],
+                    current_spec_id=spec_id,
                     avatar=images['avatar'],
                     inset=images['inset'],
                     main=images['main'],
@@ -177,15 +173,22 @@ def process_character(user_id, account, realm_id, character):
                     created=None)
             except KeyError as error:
                 print(f"{error}: {char_data['name']} - {char_data['realm']['slug']}")
+                return False
             else:
+                db_char.last_updated = last_updated
                 db_char.save()
-
-            if db_char:
                 return True
-
-            return False
-
         return False
+
+
+@app.task
+def character_update():
+    completed = 0
+    for character in models.Character.objects.all():
+        if process_character(character.account.user.pk, character.account.account_number, character.realm.slug, character.name):
+            completed += 1
+
+    return completed
 
 
 @app.task
@@ -498,13 +501,3 @@ def realm_type_update(*tests):
                 locale=models.Locale.objects.get(language__iexact=locale[:2], country__iexact=locale[-2:]),
                 name=value
             )
-
-
-@app.task
-def character_update():
-    completed = 0
-    for character in models.Character.objects.all():
-        if process_character(character.account.account_number, character.realm.slug, character.name):
-            completed += 1
-
-    return completed

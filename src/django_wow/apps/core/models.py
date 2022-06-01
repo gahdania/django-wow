@@ -239,6 +239,9 @@ class Character(models.Model):
         locale = Locale.objects.get(language='en', country='US')
         return f"{self.name} - {self.realm.realmname_set.get(locale=locale)}"
 
+    class Meta:
+        unique_together = ('name', 'realm')
+
 
 class GuildRank(models.Model):
 
